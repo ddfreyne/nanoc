@@ -33,7 +33,7 @@ describe(Nanoc::RuleDSL::RuleMemoryCalculator) do
       end
 
       context 'rules exist' do
-        before do
+        example do
           rules_proc = proc do
             filter :erb, speed: :over_9000
             layout '/default.*'
@@ -41,9 +41,7 @@ describe(Nanoc::RuleDSL::RuleMemoryCalculator) do
           end
           rule = Nanoc::RuleDSL::Rule.new(Nanoc::Int::Pattern.from('/list.*'), :csv, rules_proc)
           rules_collection.add_item_compilation_rule(rule)
-        end
 
-        example do
           subject
 
           expect(subject[0]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
@@ -75,6 +73,109 @@ describe(Nanoc::RuleDSL::RuleMemoryCalculator) do
           expect(subject[6].path).to be_nil
 
           expect(subject.size).to eql(7)
+        end
+
+        context 'anonymous snapshot followed by :last snapshot' do
+          before do
+            rules_proc = proc do
+              write '/hello.txt'
+            end
+            rule = Nanoc::RuleDSL::Rule.new(Nanoc::Int::Pattern.from('/list.*'), :csv, rules_proc)
+            rules_collection.add_item_compilation_rule(rule)
+          end
+
+          it 'merges the two snapshots' do
+            subject
+
+            expect(subject[0]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[0].snapshot_name).to eql(:raw)
+            expect(subject[0].path).to be_nil
+
+            expect(subject[1]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[1].snapshot_name).to eql(:last)
+            expect(subject[1].path).to eq('/hello.txt')
+
+            expect(subject.size).to eql(2)
+          end
+        end
+
+        context 'anonymous snapshot followed by :post and :last snapshot' do
+          before do
+            rules_proc = proc do
+              layout '/omg.*'
+              write '/hello.txt'
+            end
+            rule = Nanoc::RuleDSL::Rule.new(Nanoc::Int::Pattern.from('/list.*'), :csv, rules_proc)
+            rules_collection.add_item_compilation_rule(rule)
+          end
+
+          it 'merges the two snapshots' do
+            subject
+
+            expect(subject[0]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[0].snapshot_name).to eql(:raw)
+            expect(subject[0].path).to be_nil
+
+            expect(subject[1]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[1].snapshot_name).to eql(:pre)
+            expect(subject[1].path).to be_nil
+
+            expect(subject[2]).to be_a(Nanoc::Int::ProcessingActions::Layout)
+            expect(subject[2].layout_identifier).to eql('/omg.*')
+            expect(subject[2].params).to be_nil
+
+            expect(subject[3]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[3].snapshot_name).to eql(:post)
+            expect(subject[3].path).to be_nil
+
+            expect(subject[4]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[4].snapshot_name).to eql(:last)
+            expect(subject[4].path).to eq('/hello.txt')
+
+            expect(subject.size).to eql(5)
+          end
+        end
+
+        context ':raw snapshot by non-final :pre snapshot' do
+          before do
+            # Add compilation rule
+            rules_proc = proc do
+              layout '/omg.*'
+              write '/zzz.txt'
+            end
+            compilation_rule = Nanoc::RuleDSL::Rule.new(Nanoc::Int::Pattern.from('/list.*'), :csv, rules_proc)
+            rules_collection.add_item_compilation_rule(compilation_rule)
+
+            # Add routing rule
+            routing_rule = Nanoc::RuleDSL::Rule.new(Nanoc::Int::Pattern.from('/list.*'), :csv, proc { '/aaa.txt' }, snapshot_name: :raw)
+            rules_collection.add_item_routing_rule(routing_rule)
+          end
+
+          it 'merges the two snapshots' do
+            subject
+
+            expect(subject[0]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[0].snapshot_name).to eql(:raw)
+            expect(subject[0].path).to eql('/aaa.txt')
+
+            expect(subject[1]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[1].snapshot_name).to eql(:pre)
+            expect(subject[1].path).to be_nil
+
+            expect(subject[2]).to be_a(Nanoc::Int::ProcessingActions::Layout)
+            expect(subject[2].layout_identifier).to eql('/omg.*')
+            expect(subject[2].params).to be_nil
+
+            expect(subject[3]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[3].snapshot_name).to eql(:post)
+            expect(subject[3].path).to be_nil
+
+            expect(subject[4]).to be_a(Nanoc::Int::ProcessingActions::Snapshot)
+            expect(subject[4].snapshot_name).to eql(:last)
+            expect(subject[4].path).to eq('/zzz.txt')
+
+            expect(subject.size).to eql(5)
+          end
         end
       end
 

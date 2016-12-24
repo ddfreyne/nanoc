@@ -88,7 +88,10 @@ module Nanoc::RuleDSL
         executor.snapshot(:pre)
       end
 
-      assign_paths_to_mem(rule_memory, rep: rep)
+      # FIXME: convert to side-effect free transformation
+      mem = assign_paths_to_mem(rule_memory, rep: rep)
+      mem.canonicalize
+      mem
     end
 
     # @param [Nanoc::Int::Layout] layout

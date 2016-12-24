@@ -73,7 +73,31 @@ module Nanoc::Int
       )
     end
 
+    # Attempts to move the path of a snapshot into the :last snapshot
+    def canonicalize
+      snapshot_actions = @actions.reverse.take_while { |a| snapshot?(a) }.reverse
+
+      return if snapshot_actions.size < 2
+      return if snapshot_actions.last.snapshot_name != :last
+      return if snapshot_actions.last.path
+
+      most_recent_action_with_path = snapshot_actions.reverse.find { |a| !a.path.nil? && a.snapshot_name != :last }
+      return if most_recent_action_with_path.nil?
+
+      snapshot_actions.last.path = most_recent_action_with_path.path
+      most_recent_action_with_path.path = nil
+
+      # Remove now obsolete snapshot actions (temp snapshots without paths)
+      @actions.reject! do |action|
+        snapshot?(action) && action.path.nil? && action.snapshot_name.to_s =~ /\A_\d+\z/
+      end
+    end
+
     private
+
+    def snapshot?(action)
+      action.is_a?(Nanoc::Int::ProcessingActions::Snapshot)
+    end
 
     def will_add_snapshot(name)
       @_snapshot_names ||= Set.new

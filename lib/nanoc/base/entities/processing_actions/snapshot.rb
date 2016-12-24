@@ -4,7 +4,7 @@ module Nanoc::Int::ProcessingActions
     # snapshot :before_layout, path: '/about.md'
 
     attr_reader :snapshot_name
-    attr_reader :path
+    attr_accessor :path
 
     def initialize(snapshot_name, path)
       @snapshot_name = snapshot_name
