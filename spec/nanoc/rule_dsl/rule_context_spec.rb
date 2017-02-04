@@ -162,13 +162,24 @@ describe(Nanoc::RuleDSL::RuleContext) do
   end
 
   describe '#write' do
-    subject { rule_context.write(path) }
+    context 'with path' do
+      subject { rule_context.write(path) }
 
-    let(:path) { '/foo.html' }
+      let(:path) { '/foo.html' }
 
-    it 'makes a request to the executor' do
-      expect(executor).to receive(:snapshot).with(:last, path: '/foo.html')
-      subject
+      it 'makes a request to the executor' do
+        expect(executor).to receive(:snapshot).with(:last, path: '/foo.html')
+        subject
+      end
+    end
+
+    context 'with :ext' do
+      subject { rule_context.write(ext: 'html') }
+
+      it 'makes a request to the executor' do
+        expect(executor).to receive(:snapshot).with(:last, path: '/foo.html')
+        subject
+      end
     end
   end
 end

@@ -73,8 +73,20 @@ module Nanoc::RuleDSL
     # @param [String] path
     #
     # @return [void]
-    def write(path)
-      snapshot(:last, path: path)
+    def write(arg)
+      case arg
+      when String, Nanoc::Identifier
+        snapshot(:last, path: arg)
+      when Hash
+        if arg.key?(:ext)
+          path = @item.identifier.without_exts + '.' + arg[:ext]
+          snapshot(:last, path: path)
+        else
+          raise ArgumentError, 'Cannot call #write this way (need path or :ext)'
+        end
+      else
+        raise ArgumentError, 'Cannot call #write this way (need path or :ext)'
+      end
     end
   end
 end
