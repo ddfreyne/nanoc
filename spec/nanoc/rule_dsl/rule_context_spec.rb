@@ -173,8 +173,17 @@ describe(Nanoc::RuleDSL::RuleContext) do
       end
     end
 
-    context 'with :ext' do
+    context 'with :ext, without period' do
       subject { rule_context.write(ext: 'html') }
+
+      it 'makes a request to the executor' do
+        expect(executor).to receive(:snapshot).with(:last, path: '/foo.html')
+        subject
+      end
+    end
+
+    context 'with :ext, with period' do
+      subject { rule_context.write(ext: '.html') }
 
       it 'makes a request to the executor' do
         expect(executor).to receive(:snapshot).with(:last, path: '/foo.html')

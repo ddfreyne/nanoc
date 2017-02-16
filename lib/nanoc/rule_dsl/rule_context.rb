@@ -79,6 +79,7 @@ module Nanoc::RuleDSL
         snapshot(:last, path: arg)
       when Hash
         if arg.key?(:ext)
+          ext = arg[:ext].sub(/\A\./, '')
           path = @item.identifier.without_exts + '.' + arg[:ext]
           snapshot(:last, path: path)
         else
